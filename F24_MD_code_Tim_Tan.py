@@ -77,7 +77,7 @@ def calculate_temperature(velocities, box_size, dimensions, num_particles):
     average_kinetic_energy = total_kinetic_energy / num_particles
     temperature = (2.0 * average_kinetic_energy) / dimensions
     return average_kinetic_energy, temperature
-# Calculate forces: Updated accelerations, average potential energy, and virial coefficient.
+# relative particle: Help determine the relationship between a particle and the rest of the particles in the list.
 def relative_particle(particle, particle_lst):
     pos_lst = []
     sigma_lst = []
@@ -89,7 +89,7 @@ def relative_particle(particle, particle_lst):
         epsilon_lst.append(epsilon_new)
     adjusted_pos = pos_lst/sigma_lst
     return adjusted_pos, epsilon_lst
-
+# Calculate forces: Updated accelerations, average potential energy, and virial coefficient.
 def compute_forces(positions, accelerations, potential_energies, box_size, dimensions, particle_list):
     #Initialization
     potential_energies.fill(0.0)
@@ -125,6 +125,8 @@ def compute_forces(positions, accelerations, potential_energies, box_size, dimen
       relative_positions = relative_positions[within_cutoff]
       # Filter distances within cutoff
       squared_distances = squared_distances[within_cutoff]
+      # Filter the epsilon value within cutoff
+      epsilon_lst = epsilon_lst[within_cutoff]
       # Skip if no pairs within cutoff
       if len(squared_distances) == 0:
         continue
@@ -138,14 +140,14 @@ def compute_forces(positions, accelerations, potential_energies, box_size, dimen
       inverse_twelfth_distances = inverse_sixth_distances ** 2
       # Lennard Jones potential
       # As it was shown earlier, shifted potential improve cutoff smoothness
-      potential = epsilon * (
+      potential = epsilon_lst * (
           4.0 * (
               inverse_twelfth_distances
             - inverse_sixth_distances)
             - shifted_potential_cutoff)
       #Compute the magnitude of the force from the LJ formula
       #F = -dV/dr
-      force_magnitude = epsilon  * 24.0 * inverse_squared_distances * (
+      force_magnitude = epsilon_lst  * 24.0 * inverse_squared_distances * (
           2.0 * inverse_twelfth_distances
           - inverse_sixth_distances)
       # Equally splitting between two interacting particles
