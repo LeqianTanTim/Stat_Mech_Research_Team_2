@@ -58,8 +58,8 @@ def load_particles_from_csv(file_path):
             # Parse values from the CSV
             index = int(row['index'])
             atom_type = row['atom_type']
-            position = tuple(map(float, row['pos'].strip("()").split(',')))  # Convert position string to tuple
-            fixed_or_not = row['fixed_or_not'].strip().lower() == 'true'  # Convert string to boolean
+            position = tuple(map(float, row['position'].strip("()").split(',')))  # Convert position string to tuple
+            fixed_or_not = row['fixed'].strip().lower() == 'true'  # Convert string to boolean
             charge = float(row['charge'])
 
             # Create Particle instance and append it to the list
@@ -71,7 +71,7 @@ def load_particles_from_csv(file_path):
 # Calculate Temperature: return average kinetic energy, temperature
 def calculate_temperature(velocities, box_size, dimensions, num_particles):
     total_kinetic_energy = 0.0
-    for i in range(num_particles):
+    for i in range(num_particles): 
         scaled_velocity = box_size * velocities[i, :]
         total_kinetic_energy += 0.5 * np.dot(scaled_velocity, scaled_velocity)
     average_kinetic_energy = total_kinetic_energy / num_particles
