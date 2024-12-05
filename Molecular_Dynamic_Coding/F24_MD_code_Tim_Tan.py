@@ -6,11 +6,11 @@ class Particle:
         self.position = np.array(position, dtype=float)
         self.fixed_or_not = fixed_or_not
         self.charge = charge
-
+        self.dimension = self.position.size
         # Initialize epsilon and sigma based on the atom type
         self.epsilon, self.sigma = self._assign_parameters()
-        self.velocity = (0,0)
-        self.acceleration = (0,0)
+        self.velocity = np.zeros(self.dimension)
+        self.acceleration = np.zeros(self.dimension)
 
     def _assign_parameters(self):
         # epsilon (KJ/mol)
@@ -33,9 +33,10 @@ class Particle:
         return epsilon, sigma
 
     def __repr__(self):
-        return (f"Particle(atom_type={self.atom_type}, position={self.position}, "
+        return (f"Particle(atom_type={self.atom_type}, position={self.position}, dimension= {self.dimension}, "
                 f"fixed_or_not={self.fixed_or_not}, charge={self.charge}, "
-                f"epsilon={self.epsilon}, sigma={self.sigma})")
+                f"epsilon={self.epsilon}, sigma={self.sigma}, "
+                f"velocity={self.velocity}, acceleration={self.acceleration},  )")
     
     def __sub__(self, other):
         if not isinstance(other, Particle):
@@ -47,10 +48,17 @@ class Particle:
             sigma = (self.sigma + other.sigma)/2
             epsilon = np.sqrt(self.epsilon * other.epsilon)
         return relative_pos, sigma, epsilon
+    
+    def update_pos(self, new_value):
+        old_pos = self.position
+        self.position = new_value
+
+        # Test statement
+        #print(f"Position has been updated from {old_pos} to new pos {self.position}")
 
 # load particles from csv: returned a list of particles where each particle is loaded info from a csv file
 def load_particles_from_csv(file_path):
-    particle_list = []
+    particle_lst = [] 
 
     with open(file_path, mode='r') as file:
         reader = csv.DictReader(file)
@@ -65,10 +73,30 @@ def load_particles_from_csv(file_path):
 
             # Create Particle instance and append it to the list
             particle = Particle(atom_type, position, fixed_or_not, charge)
-            particle_list.append(particle)
+            particle_lst.append(particle)
 
     # Convert list to numpy array
-    return np.array(particle_list), dimension
+    return np.array(particle_lst), dimension
+
+# Normalization: Normalize the particles with the box size, return the particle list with normalized
+def normalization(particle_lst, box_size):
+    for particle in particle_lst:
+        old_pos = particle.position
+        particle.update_pos(particle.position/box_size)
+    return particle_lst
+
+# Shift position to center of mass: return the particle list that is shift to center of mass as origin
+def shift_com(particle_lst):
+    num_particle = particle_lst.size
+    sum_pos = np.zeros(particle_lst[0].dimension)
+    for particle in particle_lst:
+        sum_pos += particle.position
+    center_of_mass = sum_pos / num_particle
+    for particle in particle_lst:
+        old_pos = particle.position
+        particle.update_pos(old_pos - center_of_mass)
+    return particle_lst
+
 # Calculate Temperature: return average kinetic energy, temperature
 def calculate_temperature(velocities, box_size, dimensions, num_particles):
     total_kinetic_energy = 0.0
@@ -91,12 +119,12 @@ def relative_particle(particle, particle_lst):
     adjusted_pos = pos_lst/sigma_lst
     return adjusted_pos, epsilon_lst
 # Calculate forces: Updated accelerations, average potential energy, and virial coefficient.
-def compute_forces(positions, accelerations, potential_energies, box_size, dimensions, particle_list):
+def compute_forces(accelerations, potential_energies, box_size, dimensions, particle_lst):
     #Initialization
     potential_energies.fill(0.0)
     accelerations.fill(0.0)
     virial_coefficient = 0.0
-    num_particles = len(particle_list)
+    num_particles = len(particle_lst)
     cutoff_radius = 2.5
     # Precompute the square of the cutoff radius
     
@@ -110,7 +138,7 @@ def compute_forces(positions, accelerations, potential_energies, box_size, dimen
     #Loop over particles
     for i in range(num_particles - 1):
       # Compute relative positions for all other particles
-      relative_positions, epsilon_lst = relative_particle(particle_list[i], particle_list[i+1:])
+      relative_positions, epsilon_lst = relative_particle(particle_lst[i], particle_lst[i+1:])
       #Apply periodic boundary conditions
       #adjusts relative positions for particles that cross the boundary
       relative_positions -= np.rint(relative_positions)

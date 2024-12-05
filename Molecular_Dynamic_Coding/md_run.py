@@ -1,30 +1,43 @@
 import F24_MD_code_Tim_Tan
 import numpy as np
 # Part 1. File Input
-particle_lst, dimension = F24_MD_code_Tim_Tan.load_particles_from_csv('./Molecular_Dynamic_Coding/Modified_Molecular_Dynamics_Input_Data.csv')
+particle_lst, dimension = F24_MD_code_Tim_Tan.load_particles_from_csv('Modified_Molecular_Dynamics_Input_Data.csv')
 num_particle = particle_lst.size
 
 # Checkpoint 1
 # Uncomment the following code to check to see if it had input successfully
-#print(f"This input file takes in {num_particle} particles, the dimensionality of input is {dimension}")
-#print(particle_lst[0])
-#print(particle_lst[10])
+'''
+print(f"This input file takes in {num_particle} particles, the dimensionality of input is {dimension}")
+print(particle_lst[0])
+print(particle_lst[10])
+'''
+#This incorporate with checkpoint 2
+'''
+print("Before shift center of mass \n")
+for particle in particle_lst:
+    print(particle)
+'''
 
 # Part 2, Setting up parameters. 
 box_size = 10.0
 volume = box_size ** dimension
 density = num_particle / volume
 print(f"Volume = {volume}, Density = {density}")
-positions = np.zeros([num_particle, dimension])
 
-# Load positions from file; modify based on need.
-positions = np.genfromtxt('output.dat', skip_header=1)
 # Normalize positions to box-scaled units
-positions = positions[:, :dimensions] / box_size
+particle_lst = F24_MD_code_Tim_Tan.normalization(particle_lst, box_size)
+# Calculate the center of mass; Shift positions so that the center of mass is at the origin
+particle_lst = F24_MD_code_Tim_Tan.shift_com(particle_lst)
 
-# Calculate the center of mass
-center_of_mass = np.sum(positions, axis=0) / num_particles
+# Checkpoint 2
+'''
+print("After shift \n")
+for particle in particle_lst:
+    print(particle)
+'''
 
-# Shift positions so that the center of mass is at the origin
-for dim in range(dimensions):
-    positions[:, dim] -= center_of_mass[dim]
+# Setting up the simulation
+num_steps = 1000 # Number of simulation steps
+time_step = 0.0032 # Time step for integration in reduced unit
+target_temperature = 0.5 # Temperature also in reduced unit
+dump_frequency = 100 # Frequency to save positions to the output file
