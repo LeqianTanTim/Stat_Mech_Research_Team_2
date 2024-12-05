@@ -36,8 +36,10 @@ for particle in particle_lst:
     print(particle)
 '''
 
-# Setting up the simulation
-num_steps = 1000 # Number of simulation steps
-time_step = 0.0032 # Time step for integration in reduced unit
-target_temperature = 0.5 # Temperature also in reduced unit
+# Part 3, Setting up the simulation.
+num_steps = 1000 
+time_step = 0.0032 
+target_temperature = 0.5 
 dump_frequency = 100 # Frequency to save positions to the output file
+
+# Part 4, running.

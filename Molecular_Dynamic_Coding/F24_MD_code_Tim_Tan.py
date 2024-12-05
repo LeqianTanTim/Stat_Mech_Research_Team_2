@@ -112,6 +112,8 @@ def relative_particle(particle, particle_lst):
     sigma_lst = []
     epsilon_lst = []
     for i in range(len(particle_lst)):
+        # I overload my subtraction operator in the class. 
+        # You can check back the class for what happened when two particle class substract each other.
         relative_position, sigma_new, epsilon_new = particle - particle_lst[i]
         pos_lst.append(relative_position)
         sigma_lst.append(sigma_new)
