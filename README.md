@@ -13,5 +13,5 @@ This is a code update for Stat. Mech's umbrella sampling code.
        - normalization and shift of com are now conducted there.
        - velocity, acceleration and dimension are now stored within the class for convenience accessibility.
        - md_run is still in progress unfortunately.
-  
-  Code for dynamic homework on 4: https://colab.research.google.com/drive/1Ysad9RJby7uOQuodIZI378bP_HrqtX6k?usp=sharing
+  * Update Dec. 6th
+    + Incomplete the process of saving data. If you know how to modify it then this code is basically complete for its capability of md_run (# I hope)
