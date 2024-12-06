@@ -14,3 +14,4 @@ This is a code update for Stat. Mech's umbrella sampling code.
        - velocity, acceleration and dimension are now stored within the class for convenience accessibility.
        - md_run is still in progress unfortunately.
   
+  Code for dynamic homework on 4: https://colab.research.google.com/drive/1Ysad9RJby7uOQuodIZI378bP_HrqtX6k?usp=sharing
