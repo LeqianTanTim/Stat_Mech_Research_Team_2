@@ -1,10 +1,10 @@
 import F24_MD_code_Tim_Tan
 import numpy as np
 import matplotlib.pyplot as plt
-#from IPython import display
+# Modify epsilon before running, whether you want to calculate per particle or per mol basis. 
 
 # Part 1. File Input
-particle_lst, dimension = F24_MD_code_Tim_Tan.load_particles_from_csv('test_14.csv')
+particle_lst, dimension = F24_MD_code_Tim_Tan.load_particles_from_csv('Modified_Molecular_Dynamics_Input_Data.csv')
 num_particle = particle_lst.size
 
 # Checkpoint 1
@@ -59,7 +59,7 @@ def main(particle_lst, num_steps, time_step, target_temperature, dump_frequency,
     potential_energies = np.zeros(num_particles)
 
     # Open output file for saving positions (where we save the file)
-    with open('trajectory.xyz', 'w') as file:
+    with open('output.xyz', 'w') as file:
         # Main simulation loop
         for step in range(num_steps):
             # Apply periodic boundary conditions to keep particles within the box
@@ -88,28 +88,20 @@ def main(particle_lst, num_steps, time_step, target_temperature, dump_frequency,
 
             # Save data to file every `dump_frequency` steps
             if step % dump_frequency == 0:
-                print(f"Energy {kinetic_energy_avg[step] + potential_energy_avg[step]:.5f}, Temperature {temperatures[step]:.5f}\n")
-                '''
-                file.write(f"{num_particles}\n")
-                file.write(f"Energy {kinetic_energy_avg[step] + potential_energy_avg[step]:.5f}, Temperature {temperatures[step]:.5f}\n")
-                # No changes are needed for thesse two lines
-
-                for particle in particle_lst:
-                    file.write("X ")
-                    file.write(" ".join(f"{particle.position * box_size: .5f}"))
-                    file.write("\n")
+                # For kJ/mol
+                #print(f"Energy {kinetic_energy_avg[step] + potential_energy_avg[step]:.5f}, Temperature {temperatures[step]:.5f}\n")
+                # For kJ
+                print(f"Energy {kinetic_energy_avg[step] + potential_energy_avg[step]}, Temperature {temperatures[step]:.5f}\n")
 
                 
-                # Visualization for 2D systems
-                if dimensions == 2:
-                    plt.cla()
-                    plt.xlim(-0.5 * box_size, 0.5 * box_size)
-                    plt.ylim(-0.5 * box_size, 0.5 * box_size)
-                    for particle in range(num_particles):
-                        plt.plot(positions[particle, 0] * box_size, positions[particle, 1] * box_size, 'o', markersize=4)
-                    display.clear_output(wait=True)
-                    display.display(plt.gcf())
-                '''
+                file.write(f"Step {step}\n")
+                file.write(f"Energy(kJ) {kinetic_energy_avg[step] + potential_energy_avg[step]:.5f}, Temperature(K in reduced unit) {temperatures[step]:.5f}\n")
+                file.write(f"Kinetic Energy(kJ) {kinetic_energy_avg[step]:.5f}, Potential Energy(kJ) {potential_energy_avg[step]:.5}\n")
+                for particle in particle_lst:
+                    file.write(f"{particle.atom_type} ")
+                    file.write(" ".join(f"{coord * box_size:.5f}" for coord in particle.position))
+                    file.write("\n")
+
 
     return kinetic_energy_avg, potential_energy_avg, temperatures, pressures, particle_lst
 
@@ -119,7 +111,7 @@ kinetic_energy_avg, potential_energy_avg, temeperatures, pressures, particle_lst
 
 energy_avg = kinetic_energy_avg + potential_energy_avg
 steps = np.arange(num_steps)
-'''
+
 plt.figure(figsize=(8, 6))
 plt.plot(steps, energy_avg, label='Average Energy')
 plt.xlabel('Steps', fontsize=12)
@@ -130,7 +122,7 @@ plt.legend(fontsize=12)
 plt.show()
 '''
 # Define a threshold for outliers
-threshold = 1e5  
+threshold = 1e5 # For kJ/mol  
 # Filter energy_avg and steps
 filtered_steps = steps[energy_avg < threshold]
 filtered_energy_avg = energy_avg[energy_avg < threshold]
@@ -143,3 +135,4 @@ plt.title('Filtered Energy Average vs. Number of Steps', fontsize=14)
 plt.grid(True, linestyle='--', alpha=0.6)
 plt.legend(fontsize=12)
 plt.show()
+'''

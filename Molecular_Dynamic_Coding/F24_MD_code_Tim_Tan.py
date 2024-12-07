@@ -22,10 +22,10 @@ class Particle:
         # epsilon (KJ)
         # sigma (angstrom)
         if self.atom_type == "CH4":
-            epsilon = 0.15
+            epsilon = 0.15 / 6.022e23
             sigma = 3.7
         elif self.atom_type == "H2O":
-            epsilon = 0.65
+            epsilon = 0.65 / 6.022e23
             sigma = 3.15
         elif self.atom_type == "surface":
             epsilon = 0.15
