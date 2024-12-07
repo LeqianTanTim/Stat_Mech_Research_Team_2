@@ -1,10 +1,20 @@
 This is a code update for Stat. Mech's umbrella sampling code. 
 
-* Update Dec. 6th
-  + Incomplete the process of saving data. If you know how to modify it then this code is basically complete.
-  + Two test files were provided, test_2 contain one solute and one solvent particle so you can play around with ease; test_14 is a much bigger file, recommend to use when you are much more confident with the current code implementation.
+Molecular Dynamic Simulation algorithm version 1.0.0
+- Sample input file can reference test_2 and test_14.
+- Version 1.0.0 stands for (major update; minor update; bug fixes)
+- Update Roadmap:
+  - Conduct a simulation with two neutral solutes and track the distance between two solute molecules (Ver. 1.1.0)
+  - Fix one of the solute as surface (Ver. 1.2.0)
+  - Umbrella sampling implementation would be updated in version 2.0.0
+
+* Update Dec. 6th (Ver. 1.0.0)
+  + Congrats to myself! MD Code version 1.0.0 is now published!
+    - Data can now be saved as output.xyz, at each dump frequency the energy, temperature and position data would be recorded.
+    - I also added a matplotlib python code where you can visualize the energy change over steps. 
+  + Two test files were provided, test_2 contain one solute and one solvent particle so you can play around with ease; test_14 contained one solute and 13 solvent particles.
   + Random seed modification was added to F24_... python file so you can controlled the random (Thanks to Nik)
-  + Currently epsilon is in kJ/mol. Divide this value by Avogadro's number if you want per particle. 
+  + Currently epsilon is in kJ. Multiply this value by Avogadro's number if you want per mole basis.
 
 * Update Dec. 5th (11:53 am) :
    + Complete the set up before MD running
