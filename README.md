@@ -1,5 +1,12 @@
-This is a code update for Stat. Mech's umbrella sampling code. 
+This is a code announcement board for Stat. Mech's umbrella sampling code project.
 
+Ver. 1.1.0 ------ This is a non-official, still tuning version
+- New functionality was added in for both python codes.
+  - You can now monitor the distance between particles of solutes. (It currently only program to recognize water as the only type of solvent)
+  - reaction coordinates can now be monitored in a step-based processed.
+  - Plotting is now a built in function in md_run_2.0 (so more controllability I hope)
+  
+------------------Ver.1.0.0--------------------------
 Molecular Dynamic Simulation algorithm version 1.0.0
 - Sample input file can reference test_2 and test_14.
 - Version 1.0.0 stands for (major update; minor update; bug fixes)
