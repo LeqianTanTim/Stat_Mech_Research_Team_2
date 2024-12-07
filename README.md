@@ -1,7 +1,13 @@
 This is a code announcement board for Stat. Mech's umbrella sampling code project.
 
-Ver. 1.1.0 ------ This is a non-official, still tuning version
-- New functionality was added in for both python codes.
+Ver. 1.2.0------ This is a non-official, still tuning version
+
+- Ver.1.2.0 First attempt of implementing simple harmonic bias potential
+  - A new set of compute_force_US and main_US is modified for specific usage. (Differentiate them)
+  - Currently both are only available in the ver2.0 python file.
+  - bonding distance plot is added to visualize the bond distance after bias is added. Check the png file to take a peek on my result!
+
+- Ver.1.1.0 New functionality was added in for both python codes.
   - You can now monitor the distance between particles of solutes. (It currently only program to recognize water as the only type of solvent)
   - reaction coordinates can now be monitored in a step-based processed.
   - Plotting is now a built in function in md_run_2.0 (so more controllability I hope)
