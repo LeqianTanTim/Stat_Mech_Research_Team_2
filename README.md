@@ -14,4 +14,6 @@ This is a code update for Stat. Mech's umbrella sampling code.
        - velocity, acceleration and dimension are now stored within the class for convenience accessibility.
        - md_run is still in progress unfortunately.
   * Update Dec. 6th
-    + Incomplete the process of saving data. If you know how to modify it then this code is basically complete for its capability of md_run (# I hope)
+    + Incomplete the process of saving data. If you know how to modify it then this code is basically complete.
+    + Two test files were provided, test_2 contain one solute and one solvent particle so you can play around with ease; test_14 is a much bigger file, recommend to use when you are much more confident with the current code implementation.
+    + Random seed modification was added to F24_... python file so you can controlled the random (Thanks to Nik)
