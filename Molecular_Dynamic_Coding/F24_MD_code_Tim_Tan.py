@@ -14,11 +14,12 @@ class Particle:
             self.velocity = np.zeros(self.dimension)
             self.acceleration = np.zeros(self.dimension)
         else:
+            np.random.seed(1)
             self.velocity = np.random.randn(self.dimension) - 0.5
             self.acceleration = np.random.randn(self.dimension) - 0.5
 
     def _assign_parameters(self):
-        # epsilon (KJ/mol)
+        # epsilon (KJ)
         # sigma (angstrom)
         if self.atom_type == "CH4":
             epsilon = 0.15
@@ -77,6 +78,9 @@ class Particle:
     def zero_acc(self):
         self.acceleration = np.zeros(self.dimension)
 
+    def get_vel(self):
+        return self.velocity
+
 # load particles from csv: returned a list of particles where each particle is loaded info from a csv file
 def load_particles_from_csv(file_path):
     particle_lst = [] 
@@ -123,7 +127,7 @@ def calculate_temperature(particle_lst, box_size):
     total_kinetic_energy = 0.0
     num_particles = particle_lst.size
     for particle in particle_lst:
-        scaled_velocity = box_size * particle.velocity
+        scaled_velocity = box_size * particle.get_vel()
         total_kinetic_energy += 0.5 * np.dot(scaled_velocity, scaled_velocity)
     average_kinetic_energy = total_kinetic_energy / num_particles
     temperature = (2.0 * average_kinetic_energy) / particle_lst[0].dimension
@@ -141,8 +145,14 @@ def relative_particle(particle, particle_lst):
         pos_lst.append(relative_position)
         sigma_lst.append(sigma_new)
         epsilon_lst.append(epsilon_new)
-    adjusted_pos = pos_lst/sigma_lst
-    return adjusted_pos, epsilon_lst
+    pos_array = np.array(pos_lst)
+    sigma_array = np.array(sigma_lst)
+    epsilon_array = np.array(epsilon_lst)
+    adjusted_pos = []
+    for i in range(sigma_array.size):
+        adjusted_pos.append(pos_array[i]/sigma_array[i])
+    adjusted_pos_array = np.array(adjusted_pos)
+    return adjusted_pos_array, epsilon_array
 
 # Reset acceleration for all particles in the list: return a list where acceleration is reset. 
 def reset_acc(particle_lst):
@@ -157,7 +167,7 @@ def compute_forces(particle_lst, potential_energies, box_size, dimensions):
     particle_lst = reset_acc(particle_lst)
     virial_coefficient = 0.0
     num_particles = len(particle_lst)
-    cutoff_radius = 2.5
+    cutoff_radius = 2.0
     # Precompute the square of the cutoff radius
     
     cutoff_radius_squared = cutoff_radius ** 2
@@ -176,6 +186,7 @@ def compute_forces(particle_lst, potential_energies, box_size, dimensions):
       relative_positions -= np.rint(relative_positions)
       #Convert to real units (Scale from dimensionless to box dimension)
       relative_positions *= box_size
+      
       #Compute squared distance for all pairs
       squared_distances = np.sum(relative_positions ** 2, axis=1)
 
@@ -193,6 +204,7 @@ def compute_forces(particle_lst, potential_energies, box_size, dimensions):
         continue
 
       #Lennard-Jones Potential and Force calculation
+      squared_distances[squared_distances == 0] = np.inf  # prevent divisionbyzero error
       # Compute 1 / r^2 for all pairs
       inverse_squared_distances = 1.0 / squared_distances
       # Compute (1 / r^2)^3 = 1 / r^6
@@ -231,20 +243,19 @@ def compute_forces(particle_lst, potential_energies, box_size, dimensions):
       # Add forces to particle i
       if not particle_lst[i].fixed_or_not:
         current_acc = particle_lst[i].acceleration
-        particle_lst.update_acc(current_acc + np.sum(forces, axis=0))
-        for i in range(particle_lst[i+1:][within_cutoff].size):
-            if not particle_lst[i+1:][within_cutoff][i].fixed_or_not: # Not fixed
-                current_acc = particle_lst[i+1:][within_cutoff][i].acceleration
-                new_acc = current_acc - forces[i]
-                particle_lst[i+1:][within_cutoff][i].update_acc(new_acc)
-
+        particle_lst[i].update_acc(current_acc + np.sum(forces, axis=0))
+        for k in range(particle_lst[i+1:][within_cutoff].size):
+            if not particle_lst[i+1:][within_cutoff][k].fixed_or_not: # Not fixed
+                current_acc = particle_lst[i+1:][within_cutoff][k].acceleration
+                new_acc = current_acc - forces[k]
+                particle_lst[i+1:][within_cutoff][k].update_acc(new_acc)
     # Final Calculations and returns
     # Average potential energy per particle
     avg_potential_energy = np.sum(potential_energies) / num_particles
     # Normalize virial coefficient by dimensions
     virial_coefficient /= -dimensions
 
-    return avg_potential_energy, virial_coefficient, particle_lst
+    return particle_lst, avg_potential_energy, virial_coefficient
 
 # Apply Boundary conditions: return a particle list with position fixed
 def apply_bc(particle_lst):
@@ -270,7 +281,8 @@ def apply_verlet_pos(particle_lst, time_step):
         else:
             current_position = particle.position
             new_position = current_position + time_step * particle.velocity + 0.5 * (time_step ** 2) * particle.acceleration
-    return new_position
+            particle.update_pos(new_position)
+    return particle_lst
 
 # scale velocity with temperature: return a particle list with velocity scaled
 def scale_velocity(particle_lst, scale, time_step):
