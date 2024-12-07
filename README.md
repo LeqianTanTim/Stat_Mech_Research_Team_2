@@ -3,7 +3,7 @@ This is a code announcement board for Stat. Mech's umbrella sampling code projec
 Ver. 1.2.0------ This is a non-official, still tuning version
 
 - Ver.1.2.0 First attempt of implementing simple harmonic bias potential
-  - A new set of compute_force_US and main_US is modified for specific usage. (Differentiate them)
+  - A new set of compute_force_US and main_US is modified and optimized for umbrella sampling. 
   - Currently both are only available in the ver2.0 python file.
   - bonding distance plot is added to visualize the bond distance after bias is added. Check the png file to take a peek on my result!
 
