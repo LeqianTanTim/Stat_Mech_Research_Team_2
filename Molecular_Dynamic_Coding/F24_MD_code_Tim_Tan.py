@@ -299,3 +299,25 @@ def complete_force_update(particle_lst, time_step):
             current_vel = particle.velocity
             particle.update_vel(current_vel + 0.5 * time_step * particle.acceleration)
     return particle_lst
+
+# look up the particle list to see the current position and distance between the two solute particle
+# returned the reaction coordinate at that step. 
+# We might be able to map a scatter plot for R and energy (Let's see how we can implement this)
+def reaction_coordinate_lookup(particle_lst):
+    solute_lst = []
+    solvent_lst = [] # In case anyone wants to modify this.
+    R = 0.0
+    for particle in particle_lst:
+        if particle.atom_type == "H2O":
+            solvent_lst.append(particle)
+        else:
+            solute_lst.append(particle)
+    solute_array = np.array(solute_lst)
+    if solute_array.size > 2:
+        print("More than one solute available for pairwise analysis")
+        return
+    else:
+        solute_1 = solute_array[0].position
+        solute_2 = solute_array[1].position
+        R = np.linalg.norm(solute_1 - solute_2)
+    return R
