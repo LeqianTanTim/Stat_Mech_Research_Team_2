@@ -1,6 +1,9 @@
 This is a code announcement board for Stat. Mech's umbrella sampling code project.
 
 Ver. 1.2.0------ This is a non-official, still tuning version
+* Warning!!
+* Just a quick update on the ver 1.2.0 code if you decided to play around with it. There is currently a fatal flaw where the bias harmonic force is not correctly assigned (both solute had been assigned with the same force that basically just dragged them around in the same distance) and the set r0 value is not normalized by the box size as well, causing serious issues when computing. I would try to fix that in the meantime. That explains why this mess occurred.
+* If you do encounter problems let me know as well.
 
 - Ver.1.2.0 First attempt of implementing simple harmonic bias potential
   - A new set of compute_force_US and main_US is modified and optimized for umbrella sampling. 
