@@ -1,5 +1,6 @@
 import csv
 import numpy as np
+import matplotlib.pyplot as plt
 class Particle:
     def __init__(self, atom_type, position, fixed_or_not, charge):
         self.atom_type = atom_type
@@ -22,14 +23,14 @@ class Particle:
         # epsilon (KJ)
         # sigma (angstrom)
         if self.atom_type == "CH4":
-            epsilon = 0.15 / 6.022e23
-            sigma = 3.7
+            epsilon = 1.23 / 6.022e23 
+            sigma = 3.73
         elif self.atom_type == "H2O":
-            epsilon = 0.65 / 6.022e23
+            epsilon = 0.636 / 6.022e23 
             sigma = 3.15
-        elif self.atom_type == "surface":
-            epsilon = 0.15
-            sigma = 1.3
+        elif self.atom_type == "surface": # graphene
+            epsilon = 0.293 / 6.022e23 
+            sigma = 3.55
         else:
             # Default values for unknown atom types
             print('Invalid particle type was input, please update the current force field before running.')
@@ -317,17 +318,35 @@ def reaction_coordinate_lookup(particle_lst):
         print("More than one solute available for pairwise analysis")
         return
     else:
-        solute_1 = solute_array[0].position
-        solute_2 = solute_array[1].position
-        R = np.linalg.norm(solute_1 - solute_2)
-    return R
+        solute_1 = solute_array[0].position 
+        solute_2 = solute_array[1].position 
+        relative_position = solute_1 - solute_2
+        R = np.linalg.norm(relative_position)
+    return R, relative_position
 
+# Verification of reaction coordinate: return the position of the solutes for debugging purposes
+def reaction_coordinate_verify(particle_lst):
+    solute_lst = []
+    solvent_lst = [] # In case anyone wants to modify this.
+    R = 0.0
+    for particle in particle_lst:
+        if particle.atom_type == "H2O":
+            solvent_lst.append(particle)
+        else:
+            solute_lst.append(particle)
+    if len(solute_lst) > 2:
+        print("More than one solute available for pairwise analysis")
+        return
+    else:
+        solute_1 = solute_lst[0]
+        solute_2 = solute_lst[1]
+    return solute_1, solute_2
 # Umbrella Sampling's version of compute force
 # Bias harmonic force, new parameter k and r0
 # Calculate forces umbrella sampling version: Updated accelerations, average potential energy, and virial coefficient.
 
-def bias(k, r0, R):
-    return -k * (R - r0)
+def bias(k, r0, R, relative_position):
+    return -k * (R - r0) * relative_position / R
 
 def compute_forces_US(particle_lst, potential_energies, box_size, dimensions, bias_force):
     #Initialization
@@ -337,16 +356,23 @@ def compute_forces_US(particle_lst, potential_energies, box_size, dimensions, bi
     num_particles = len(particle_lst)
     cutoff_radius = 2.0
     # Precompute the square of the cutoff radius
-    
     cutoff_radius_squared = cutoff_radius ** 2
+
+    # Defined a counter to check the appearance of solute
     '''
-    shifted_potential_cutoff = epsilon * (
-        4.0 * ((1.0 / cutoff_radius_squared) ** 6 - (
-            1.0 / cutoff_radius_squared) ** 3))
+    -- if this is the first solute to encounter:
+    -- apply F
+    -- if this is the second solute to encounter:
+    -- apply -F
     '''
+    solute_counter = 0
     #Cutoff Radius is pre-normalized by sigma
     #Loop over particles
     for i in range(num_particles - 1):
+      if particle_lst[i].atom_type != "H2O":
+          solute_counter += 1
+      if solute_counter > 1:
+          bias_force = -bias_force
       # Compute relative positions for all other particles
       relative_positions, epsilon_lst = relative_particle(particle_lst[i], particle_lst[i+1:])
       #Apply periodic boundary conditions
@@ -394,11 +420,9 @@ def compute_forces_US(particle_lst, potential_energies, box_size, dimensions, bi
       #Compute the magnitude of the force from the LJ formula
       #F = -dV/dr
       force_magnitude = epsilon_lst  * 24.0 * inverse_squared_distances * (
-          2.0 * inverse_twelfth_distances
-          - inverse_sixth_distances) + bias_force
+        2.0 * inverse_twelfth_distances
+        - inverse_sixth_distances)   
     
-      # Apply Bias force here
-
       # Equally splitting between two interacting particles
       # Add half of the potential energy to particle i
       potential_energies[i] += np.sum(0.5 * potential)
@@ -408,7 +432,12 @@ def compute_forces_US(particle_lst, potential_energies, box_size, dimensions, bi
       virial_coefficient += np.sum(
           force_magnitude * np.sqrt(squared_distances))
       # Force vectors are computed and added to accelerations [i]
-      forces = (force_magnitude[:, np.newaxis] *
+      if particle_lst[i].atom_type != "H2O":
+        forces = bias_force + (force_magnitude[:, np.newaxis] *
+                relative_positions) / np.sqrt(
+                    squared_distances)[:, np.newaxis]
+      else:
+        forces = (force_magnitude[:, np.newaxis] *
                 relative_positions) / np.sqrt(
                     squared_distances)[:, np.newaxis]
       # Add forces to particle i
@@ -420,6 +449,8 @@ def compute_forces_US(particle_lst, potential_energies, box_size, dimensions, bi
                 current_acc = particle_lst[i+1:][within_cutoff][k].acceleration
                 new_acc = current_acc - forces[k]
                 particle_lst[i+1:][within_cutoff][k].update_acc(new_acc)
+            else:
+                continue
     # Final Calculations and returns
     # Average potential energy per particle
     avg_potential_energy = np.sum(potential_energies) / num_particles
@@ -427,3 +458,67 @@ def compute_forces_US(particle_lst, potential_energies, box_size, dimensions, bi
     virial_coefficient /= -dimensions
 
     return particle_lst, avg_potential_energy, virial_coefficient
+
+# ------ Plotting ------
+
+# Energy plotting
+def energy_plot_kJ(steps, energy_avg):
+    plt.figure(figsize=(8, 6))
+    plt.plot(steps, energy_avg, label='Average Energy')
+    plt.xlabel('Steps', fontsize=12)
+    plt.ylabel('Energy (Average)', fontsize=12)
+    plt.title('Energy Average vs. Number of Steps', fontsize=14)
+    plt.grid(True, linestyle='--', alpha=0.6)
+    plt.legend(fontsize=12)
+    plt.show()
+    return
+
+# Define a threshold for outliers
+def energy_plot_kJmol(steps, energy_avg):
+    threshold = 1e5 # For kJ/mol  
+    # Filter energy_avg and steps
+    filtered_steps = steps[energy_avg < threshold]
+    filtered_energy_avg = energy_avg[energy_avg < threshold]
+    # Plot the filtered data
+    plt.figure(figsize=(8, 6))
+    plt.plot(filtered_steps, filtered_energy_avg, label='Filtered Energy', linewidth=2)
+    plt.xlabel('Steps', fontsize=12)
+    plt.ylabel('Energy (Average)', fontsize=12)
+    plt.title('Filtered Energy Average vs. Number of Steps', fontsize=14)
+    plt.grid(True, linestyle='--', alpha=0.6)
+    plt.legend(fontsize=12)
+    plt.show()
+    return
+
+# Scatter plot of reaction coordinates and energy
+def scatter(energy_avg, reaction_coordinates):
+    plt.figure(figsize=(8, 6))
+    plt.scatter(reaction_coordinates, energy_avg, color='blue', label='Energy vs. Distance')
+    plt.xlabel('Bond Distance', fontsize=12)
+    plt.ylabel('Energy', fontsize=12)
+    plt.title('Energy vs. Bond Distance', fontsize=14)
+    plt.grid(True, linestyle='--', alpha=0.6)
+    plt.legend(fontsize=12)
+    plt.show()
+
+# Bond distance over steps
+def bond_distance_plot(steps, reaction_coordinates):
+    plt.figure(figsize=(8, 6))
+    plt.plot(steps, reaction_coordinates, label='bond distance')
+    plt.xlabel('Steps', fontsize=12)
+    plt.ylabel('bond distance', fontsize=12)
+    plt.title('Bond distance vs. Number of Steps under bias harmonic potential', fontsize=14)
+    plt.grid(True, linestyle='--', alpha=0.6)
+    plt.legend(fontsize=12)
+    plt.show()
+    return
+
+# I want to ensure that my surface particle won't move.
+def monitor_the_surface(particle_lst):
+    for particle in particle_lst:
+        if particle.atom_type == "surface":
+            return particle.velocity, particle.acceleration
+        else:
+            continue
+    return
+
