@@ -1,10 +1,13 @@
 This is a code announcement board for Stat. Mech's umbrella sampling code project.
 
-Ver. 1.2.0------ This is a non-official, still tuning version
-* Warning!!
-* Just a quick update on the ver 1.2.0 code if you decided to play around with it. There is currently a fatal flaw where the bias harmonic force is not correctly assigned (both solute had been assigned with the same force that basically just dragged them around in the same distance) and the set r0 value is not normalized by the box size as well, causing serious issues when computing. I would try to fix that in the meantime. That explains why this mess occurred.
-* If you do encounter problems let me know as well.
-
+Ver. 2.0.0------ 
+Molecular Dynamic Simulation algorithm version 2.0.0
+- I am happy to annouce that umbrella sampling is finally, and successfully imported into the current code.
+- My test is conducted with the file fixed_test.csv which you can find this in my folder as well.
+- If you want to see what it looks like, feel free to see the first_attempt_..._ figure. (with Ver.2.0.0)
+- I would love to know the feedback with this code to see if there is any incompatibility issue.
+- I would now head to work on grading lab reports and Dynamic's paper. Let me know if there is any feedback with the code to perfect it. 
+  
 - Ver.1.2.0 First attempt of implementing simple harmonic bias potential
   - A new set of compute_force_US and main_US is modified and optimized for umbrella sampling. 
   - Currently both are only available in the ver2.0 python file.
