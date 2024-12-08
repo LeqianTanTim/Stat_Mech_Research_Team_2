@@ -2,7 +2,7 @@ This is a code announcement board for Stat. Mech's umbrella sampling code projec
 
 **Ver. 2.0.0**------ 
 Molecular Dynamic Simulation algorithm version 2.0.0
-- I am happy to annouce that umbrella sampling is finally, and successfully imported into the current code.
+- I am happy to annouce that umbrella sampling is finally, and successfully implemented!
 - My test is conducted with the file fixed_test.csv which you can find this in my folder as well.
 - If you want to see what it looks like, feel free to see the first_attempt_..._ figure. (with Ver.2.0.0)
 - I would love to know the feedback with this code to see if there is any incompatibility issue.
