@@ -15,7 +15,7 @@ Molecular Dynamic Simulation algorithm version 2.0.0
   - bonding distance plot is added to visualize the bond distance after bias is added. Check the png file to take a peek on my result!
 
 - Ver.1.1.0 New functionality was added in for both python codes.
-  - You can now monitor the distance between particles of solutes. (It currently only program to recognize water as the only type of solvent)
+  - You can now monitor the distance between particles of solutes. (It currently only program to differentiate water from other particles)
   - reaction coordinates can now be monitored in a step-based processed.
   - Plotting is now a built in function in md_run_2.0 (so more controllability I hope)
 
