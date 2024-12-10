@@ -141,7 +141,7 @@ def calculate_temperature(particle_lst, box_size):
         scaled_velocity = box_size * particle.get_vel() * 5e4 # convert from angstrom/2fs to m/s
         total_kinetic_energy += 0.5 * particle.mass * np.dot(scaled_velocity, scaled_velocity) # 1/2 mv^2
     average_kinetic_energy = total_kinetic_energy / num_particles # in J
-    temperature = (average_kinetic_energy) / (particle_lst.size * kb) # in K
+    temperature = (average_kinetic_energy) / (kb) # in K
     return average_kinetic_energy, temperature
 
 # relative particle: Help determine the relationship between a particle and the rest of the particles in the list.
