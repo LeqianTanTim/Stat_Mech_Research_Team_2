@@ -2,6 +2,7 @@ This is a code announcement board for Stat. Mech's umbrella sampling code projec
 
 **Ver. 3.0.0**------
 Molecular Dynamic Simulation algorithm version 3.0.0
+Bug fixed in Ver 3.0.1 - Temperature was evaluated incorrectly. Now should be good. 
 - Biggest update so far.
 - Many Bugs have been fixed:
     - Non-uniformity of unit have been address. See my code and later posted pdf for more info.
