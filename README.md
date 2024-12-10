@@ -1,5 +1,17 @@
 This is a code announcement board for Stat. Mech's umbrella sampling code project.
 
+**Ver. 3.0.0**------
+Molecular Dynamic Simulation algorithm version 3.0.0
+- Biggest update so far.
+- Many Bugs have been fixed:
+    - Non-uniformity of unit have been address. See my code and later posted pdf for more info.
+    - Box_size is increased to better address the number of particles inside the box
+    - New PBC condition was added to correctly placed particles (Thanks to Lauren who pointed out the functionality of rint)
+- Ver 3.1.0 (expected Dec. 10th or 11th) would include the new bias potential and reactive look up. Currently these two functions are temporaly removed from Ver 3.0.0.
+- Ver 3.1.0 also would have functions to visualize particle movements via animation.
+- Ver 4.0.0 (expected Thursday or Friday) would include functions to combine the bias probability together.
+- I am tired when typing this so mistakes may occurred. 
+
 **Ver. 2.0.0**------ 
 Molecular Dynamic Simulation algorithm version 2.0.0
 - I am happy to annouce that umbrella sampling is finally, and successfully implemented!
