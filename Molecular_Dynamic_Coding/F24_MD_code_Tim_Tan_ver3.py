@@ -1,5 +1,7 @@
 import csv
 import numpy as np
+import matplotlib.pyplot as plt
+
 class Particle:
     def __init__(self, atom_type, position, fixed_or_not, charge):
         self.atom_type = atom_type
@@ -28,13 +30,13 @@ class Particle:
             epsilon = 0.636 * 1e3 / 6.022e23 
             sigma = 3.15
             mass = 2.99151e-26 # 18.015 amu, in kg
-        elif self.atom_type == "surface": # assume graphene lattice model, approximated for 10 angstrom, 57.8 unit cells, each unit cell contain 2 carbon atoms
-            epsilon = 0.23 * 1e3 / 6.022e23 
+        elif self.atom_type == "Surface": # assume graphene lattice model, approximated for 15 angstrom, 57.8 unit cells, each unit cell contain 2 carbon atoms
+            epsilon = 1.6e-20
             sigma = 3.4
-            mass = 2.3e-24
+            mass = 1.993e-26
         else:
             # Default values for unknown atom types
-            print('Invalid particle type was input, please update the current force field before running.')
+            print(f'Invalid particle type was input {self.atom_type}, please update the current force field before running.')
             epsilon = 0.0
             sigma = 0.0
             mass = 0.0
@@ -156,6 +158,7 @@ def relative_particle(particle, particle_lst):
         pos_lst.append(relative_position)
         sigma_lst.append(sigma_new)
         epsilon_lst.append(epsilon_new)
+        
     pos_array = np.array(pos_lst)
     sigma_array = np.array(sigma_lst)
     epsilon_array = np.array(epsilon_lst)
@@ -194,7 +197,11 @@ def compute_forces(particle_lst, potential_energies, box_size, dimensions):
       #print(squared_distances)
       #Apply cutoff Radius
       # Boolean mask for pairs within the cutoff radius
-      within_cutoff = squared_distances < cutoff_radius_squared
+      atom_type_mask = np.array([particle.atom_type != "Surface" for particle in particle_lst[i + 1:]])
+
+      within_cutoff = (squared_distances < cutoff_radius_squared) & atom_type_mask
+      # Boolean mask for both pairs that are the same atom_type
+     
       # Filter positions within cutoff
       #print(f"Before filter {relative_positions.size}")
       relative_positions = relative_positions[within_cutoff]
@@ -219,6 +226,7 @@ def compute_forces(particle_lst, potential_energies, box_size, dimensions):
       #print(f"(sigma / r)^2 = {inverse_squared_distances}")
       # Compute (sigma^2 / r^2)^3 = sigma^6 / r^6
       inverse_sixth_distances = inverse_squared_distances ** 3
+      inverse_sixth_distances = np.clip(inverse_sixth_distances, a_min=1e-10, a_max=1e10)
       # Compute (sigma^6 / r^6)^2 = sigma^12 / r^12
       inverse_twelfth_distances = inverse_sixth_distances ** 2
       # Lennard Jones potential
@@ -242,9 +250,7 @@ def compute_forces(particle_lst, potential_energies, box_size, dimensions):
       potential_energies[i] += np.sum(0.5 * potential)
       # Add half to the interacting particles
       potential_energies[i + 1:][within_cutoff] += 0.5 * potential
-      # Virial coefficient: Used for pressure calculations
-      virial_coefficient += np.sum(
-          force_magnitude * np.sqrt(squared_distances))
+      
       # Force vectors are computed and added to accelerations [i]
       # relative position is in m
       forces = (force_magnitude[:, np.newaxis] *
@@ -269,7 +275,7 @@ def compute_forces(particle_lst, potential_energies, box_size, dimensions):
     # Normalize virial coefficient by dimensions
     virial_coefficient /= -dimensions
 
-    return particle_lst, avg_potential_energy, virial_coefficient
+    return particle_lst, avg_potential_energy
 
 # Apply Boundary conditions: return a particle list with position fixed
 def apply_bc(particle_lst):
@@ -306,3 +312,37 @@ def complete_force_update(particle_lst, time_step):
             current_vel = particle.get_vel()
             particle.update_vel(current_vel + time_step * particle.acceleration)
     return particle_lst
+
+def reaction_coordinate_lookup(particle_lst):
+    R = 0.0
+    particle_lst = apply_bc(particle_lst)
+    surface_ref = particle_lst[0]
+    for particle in particle_lst:
+        if particle.atom_type == 'CH4':
+            solute = particle
+    solute_pos = solute.get_pos()
+    surface_pos = surface_ref.get_pos()
+    relative_position = solute_pos - surface_pos
+    R = np.linalg.norm(relative_position)
+    return R, relative_position
+    
+def record_position(particle_lst, box_size):
+    bc_particle_lst = apply_bc(particle_lst)
+    current_frame = []
+    for particle in bc_particle_lst:
+        pos = particle.get_pos() * box_size
+        current_frame.append(pos)
+    current_frame = np.array(current_frame)
+    return current_frame
+
+def rxn_coord_plot(steps, rxn_coord):
+    plt.figure(figsize=(8, 6))
+    plt.plot(steps, rxn_coord, label='reaction coordinates', linewidth=2)
+    plt.xlabel('Steps', fontsize=12)
+    plt.ylabel('reaction coordinates', fontsize=12)
+    plt.title('Reaction coordinates vs. Step', fontsize=14)
+    plt.grid(True, linestyle='--', alpha=0.6)
+    plt.legend(fontsize=12)
+    plt.show()
+
+    
