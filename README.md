@@ -1,4 +1,8 @@
 This is a code announcement board for Stat. Mech's umbrella sampling code project.
+**Ver. 3.9.9**------
+Molecular Dynamic Simulation algorithm version 3.9.9 (my Ver)
+- Fix the unit conversion so it should now uses real unit calculation. No longer using a mixed of real unit and reduced unit to preserve consistency when calculating harmonic potential forces.
+- Include a function called plot that can plot any kind of data you want by modifying the input parameters. 
 
 **Ver. 3.0.0**------
 Molecular Dynamic Simulation algorithm version 3.0.0
