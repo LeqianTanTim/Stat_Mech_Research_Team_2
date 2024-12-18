@@ -1,5 +1,14 @@
 This is a code announcement board for Stat. Mech's umbrella sampling code project.
 
+![umbrella_window_histograms_50000_100](https://github.com/user-attachments/assets/bb866e86-7744-41b5-aa24-0565b88d7de7)
+
+**Ver. 4.0.0**------
+Molecular Dynamic Simulation Algorithm Version 4.0.0
+- This would not be the last patch for this file. I enjoyed working with this and would dedicate my time to include more sampling methods and perfect the energy calculation process for this. Transition path sampling or Transition interphase sampling.
+- Adjust the selection for cutoff, specifically for the surface particles.
+- Force constant is also adjusted.
+- We made it!
+
 **Ver. 3.9.9**------
 Molecular Dynamic Simulation algorithm version 3.9.9 (my Ver)
 - Fix the unit conversion so it should now uses real unit calculation. No longer using a mixed of real unit and reduced unit to preserve consistency when calculating harmonic potential forces.
