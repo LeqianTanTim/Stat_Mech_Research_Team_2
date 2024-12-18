@@ -197,9 +197,12 @@ def compute_forces(particle_lst, potential_energies, box_size, dimensions):
       #print(squared_distances)
       #Apply cutoff Radius
       # Boolean mask for pairs within the cutoff radius
+     
       atom_type_mask = np.array([particle.atom_type != "Surface" for particle in particle_lst[i + 1:]])
-
-      within_cutoff = (squared_distances < cutoff_radius_squared) & atom_type_mask
+      if particle_lst[i].atom_type == "surface":
+        within_cutoff = (squared_distances < cutoff_radius_squared) & atom_type_mask
+      else:
+        within_cutoff = squared_distances < cutoff_radius_squared
       # Boolean mask for both pairs that are the same atom_type
      
       # Filter positions within cutoff
@@ -349,3 +352,133 @@ def plot(steps, data_to_plot, title, upper_threshold=1e10, lower_threshold=0.0):
     plt.savefig(f'{title}_steps.png')
     plt.close()
 
+# ------- Umbrella Sampling ---------------
+
+def compute_forces_umbrella_sampling(particle_lst, potential_energies, box_size, dimensions, bias):
+    #Initialization
+    potential_energies.fill(0.0)
+    particle_lst = reset_acc(particle_lst)
+    virial_coefficient = 0.0
+    num_particles = len(particle_lst)
+
+    #Loop over particles
+    for i in range(num_particles - 1):
+      # Compute relative positions for all other particles
+      relative_positions, epsilon_lst, sigma_lst = relative_particle(particle_lst[i], particle_lst[i+1:])
+      cutoff_radius = 4e-10 # 4 angstrom
+      sigma_lst = sigma_lst * 1e-10
+      cutoff_radius_squared = cutoff_radius ** 2
+      #print(f"the cutoff_radius_squared was {cutoff_radius_squared} in m")
+      #Apply periodic boundary conditions
+      #adjusts relative positions for particles that cross the boundary
+      relative_positions -= np.rint(relative_positions)
+      #Convert to real units (Scale from dimensionless to box dimension)
+      relative_positions *= (box_size * 1e-10) # convert angstrom to m
+      
+      #Compute squared distance for all pairs
+      squared_distances = np.sum(relative_positions ** 2, axis=1)
+      #print(squared_distances)
+      #Apply cutoff Radius
+      # Boolean mask for pairs within the cutoff radius
+      atom_type_mask = np.array([particle.atom_type != "Surface" for particle in particle_lst[i + 1:]])
+
+      within_cutoff = (squared_distances < cutoff_radius_squared) & atom_type_mask
+      # Boolean mask for both pairs that are the same atom_type
+     
+      # Filter positions within cutoff
+      #print(f"Before filter {relative_positions.size}")
+      relative_positions = relative_positions[within_cutoff]
+      #print(f"After cutoff {relative_positions.size}")
+      # Filter distances within cutoff
+      squared_distances = squared_distances[within_cutoff]
+      #print(f"Squared distance \n {squared_distances}")
+      # Filter the epsilon value within cutoff
+      epsilon_lst = epsilon_lst[within_cutoff]
+      sigma_lst = sigma_lst[within_cutoff]
+      #print(f"Sigma list \n {sigma_lst}")
+      # Skip if no pairs within cutoff
+      if len(squared_distances) == 0:
+        continue
+      sigma_squared = sigma_lst ** 2
+      #Lennard-Jones Potential and Force calculation
+      squared_distances[squared_distances == 0] = np.inf  # prevent divisionbyzero error
+      # compute 1/r
+      inverse_distance = 1 / (np.sqrt(squared_distances))
+      # Compute sigma^2 / r^2 for all pairs
+      inverse_squared_distances = sigma_squared / squared_distances
+      #print(f"(sigma / r)^2 = {inverse_squared_distances}")
+      # Compute (sigma^2 / r^2)^3 = sigma^6 / r^6
+      inverse_sixth_distances = inverse_squared_distances ** 3
+      inverse_sixth_distances = np.clip(inverse_sixth_distances, a_min=1e-10, a_max=1e10)
+      # Compute (sigma^6 / r^6)^2 = sigma^12 / r^12
+      inverse_twelfth_distances = inverse_sixth_distances ** 2
+      # Lennard Jones potential
+      # As it was shown earlier, shifted potential improve cutoff smoothness
+
+      shifted_potential_cutoff = 4.0 * ((sigma_squared / cutoff_radius_squared) ** 6 - (sigma_squared / cutoff_radius_squared) ** 3)
+      potential = epsilon_lst * (
+          4.0 * (
+              inverse_twelfth_distances
+            - inverse_sixth_distances)
+            - shifted_potential_cutoff)
+      #print(f"Potential is \n {potential}")
+      #Compute the magnitude of the force from the LJ formula
+      #F = -dV/dr
+      force_magnitude = epsilon_lst  * 24.0 * inverse_distance * (
+          2.0 * inverse_twelfth_distances
+          - inverse_sixth_distances)
+    
+      # Equally splitting between two interacting particles
+      # Add half of the potential energy to particle i
+      potential_energies[i] += np.sum(0.5 * potential)
+      # Add half to the interacting particles
+      potential_energies[i + 1:][within_cutoff] += 0.5 * potential
+      
+      # Force vectors are computed and added to accelerations [i]
+      # relative position is in m
+      forces = (force_magnitude[:, np.newaxis] *
+                relative_positions) / np.sqrt(
+                    squared_distances)[:, np.newaxis]
+      
+      
+      # Add forces to particle i
+      if not particle_lst[i].fixed_or_not:
+        net_force = np.sum(forces, axis=0)
+        if particle_lst[i].atom_type == "CH4":
+            #print(f"The net force is {net_force} and the bias that was adding to it is {bias}")
+            net_force = net_force + bias
+        current_acc = particle_lst[i].acceleration
+        #print(f"previously acceleration for {particle_lst[i].atom_type} is {current_acc} angstrom/4fs^2")
+        new_acc = current_acc * 0.25 * 1e20 * box_size + net_force/particle_lst[i].mass # convert the acceleration to m/s^2 before adding F/m = a
+        #print(f"new acceleration for {particle_lst[i].atom_type} is {new_acc} m/s^2")
+        particle_lst[i].update_acc(new_acc * 0.25 * 1e-20/box_size) # convert back to angstrom/4fs^2
+            
+      for k in range(particle_lst[i+1:][within_cutoff].size):
+        if not particle_lst[i+1:][within_cutoff][k].fixed_or_not: # Not fixed
+            current_acc = particle_lst[i+1:][within_cutoff][k].acceleration * 0.25 * 1e20 * box_size
+            new_acc = current_acc - forces[k]/particle_lst[i+1:][within_cutoff][k].mass
+            particle_lst[i+1:][within_cutoff][k].update_acc(new_acc * 0.25 * 1e-20 / box_size)
+    # Final Calculations and returns
+    # Average potential energy per particle
+    avg_potential_energy = np.sum(potential_energies) / num_particles
+    # Normalize virial coefficient by dimensions
+    virial_coefficient /= -dimensions
+
+    return particle_lst, avg_potential_energy
+
+
+
+
+def generate_sampling_ranges(r0_list, range_offset=0.5):
+    """
+    Generates sampling ranges for a given list of window centers.
+    
+    Parameters:
+        r0_list (array-like): List or array of window centers (r0 values).
+        range_offset (float): Offset to determine the range (default is 0.5).
+    
+    Returns:
+        list of tuples: List containing tuples of (low, high) for each window.
+    """
+    ranges = [(r0 - range_offset, r0 + range_offset) for r0 in r0_list]
+    return ranges
